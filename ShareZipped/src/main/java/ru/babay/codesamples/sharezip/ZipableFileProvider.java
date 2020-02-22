@@ -24,10 +24,9 @@ import java.util.zip.ZipOutputStream;
 /**
  * File provider intended to zip files on-the-fly.
  * It can send files (just like FileProvider) and zip files.
- *
+ * <p>
  * Use {@link ZipableFileProvider#getUriForFile(Context, String, File, boolean)}
  * to create an URI.
- *
  */
 //@SuppressWarnings("ALL")
 public class ZipableFileProvider extends FileProvider {
@@ -36,11 +35,12 @@ public class ZipableFileProvider extends FileProvider {
 
     /**
      * Just like {@link FileProvider#getUriForFile}, but will create an URI for zipping wile while sending
-     * @param context
-     * @param authority
-     * @param file
-     * @param zipFile
-     * @return
+     *
+     * @param context - see {@link FileProvider#getUriForFile}
+     * @param authority - see {@link FileProvider#getUriForFile}
+     * @param file - see {@link FileProvider#getUriForFile}
+     * @param zipFile - true to make zipped file uri, false for regular file uri
+     * @return - see {@link FileProvider#getUriForFile}
      */
 
     public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
@@ -54,6 +54,81 @@ public class ZipableFileProvider extends FileProvider {
                     .encodedQuery("zip").build();
         }
         return uri;
+    }
+
+    public static ParcelFileDescriptor startZippedPipe(File file) throws IOException {
+        ParcelFileDescriptor[] pipes = Build.VERSION.SDK_INT >= 19 ?
+                ParcelFileDescriptor.createReliablePipe() :
+                ParcelFileDescriptor.createPipe();
+        new Thread(() -> doZipFile(pipes[1], file)).start();
+        return pipes[0];
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private static ParcelFileDescriptor startZippedSocketPair(File file) throws IOException {
+        ParcelFileDescriptor[] pipes = ParcelFileDescriptor.createReliableSocketPair();
+        new Thread(() -> doZipFile(pipes[1], file)).start();
+        return pipes[0];
+    }
+
+    /**
+     * zips and sends a file to a ParcelFileDescriptor writeFd
+     * <p>
+     * Note that some apps (like Telegram) receives the file at once.
+     * Other apps (like Gmail) open the file you share, read some kb and close it,
+     * and reopen it later (when you really send the email).
+     * So, it's OK if "Broken pipe" exception thrown.
+     *
+     * @param writeFd - file descriptor to write to
+     * @param inputFile - source input file
+     */
+    private static void doZipFile(ParcelFileDescriptor writeFd, File inputFile) {
+        long start = System.currentTimeMillis();
+        byte[] buf = new byte[1024];
+        int writtenSize = 0;
+        try (FileInputStream iStream = new FileInputStream(inputFile);
+             ZipOutputStream zipStream = new ZipOutputStream(new FileOutputStream(writeFd.getFileDescriptor()))) {
+
+            zipStream.putNextEntry(new ZipEntry(inputFile.getName()));
+            int amount;
+            while (0 <= (amount = iStream.read(buf))) {
+                zipStream.write(buf, 0, amount);
+                writtenSize += amount;
+            }
+
+            zipStream.closeEntry();
+            zipStream.close();
+            iStream.close();
+            writeFd.close();
+
+            if (BuildConfig.DEBUG)
+                Log.d(TAG, "doZipFile: done. it took ms: " + (System.currentTimeMillis() - start));
+        } catch (IOException e) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                try {
+                    writeFd.closeWithError(e.getMessage());
+                } catch (IOException e1) {
+                    Log.e(TAG, "doZipFile: ", e1);
+                }
+            }
+            if (BuildConfig.DEBUG)
+                Log.d(TAG, "doZipFile: written: " + writtenSize, e);
+        }
+    }
+
+    public static String getExportFileName(File file, boolean isZip) {
+        if (isZip) {
+            return removeExt(file.getName()) + ".zip";
+        } else {
+            return file.getName();
+        }
+    }
+
+    private static String removeExt(String fileName) {
+        int pos = fileName.indexOf('.');
+        if (pos < 0)
+            return fileName;
+        return fileName.substring(0, pos);
     }
 
     @Override
@@ -107,65 +182,5 @@ public class ZipableFileProvider extends FileProvider {
         final MatrixCursor cursor = new MatrixCursor(cols, 1);
         cursor.addRow(values);
         return cursor;
-    }
-
-    public static ParcelFileDescriptor startZippedPipe(File file) throws IOException {
-        ParcelFileDescriptor[] pipes = Build.VERSION.SDK_INT >= 19 ?
-                ParcelFileDescriptor.createReliablePipe() :
-                ParcelFileDescriptor.createPipe();
-        new Thread(() -> doZipFile(pipes[1], file)).start();
-        return pipes[0];
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private static ParcelFileDescriptor startZippedSocketPair(File file) throws IOException {
-        ParcelFileDescriptor[] pipes = ParcelFileDescriptor.createReliableSocketPair();
-        new Thread(() -> doZipFile(pipes[1], file)).start();
-        return pipes[0];
-    }
-
-    /**
-     * zips and sends a file to a ParcelFileDescriptor writeFd
-     *
-     * Note that some apps (like Telegram) receives the file at once.
-     * Other apps (like Gmail) open the file you share, read some kb and close it,
-     * and reopen it later (when you really send the email).
-     * So, it's OK if "Broken pipe" exception thrown.
-     *
-     * @param writeFd
-     * @param inputFile
-     */
-    private static void doZipFile(ParcelFileDescriptor writeFd, File inputFile) {
-        long start = System.currentTimeMillis();
-        byte[] buf = new byte[1024];
-        int writtenSize = 0;
-        try (FileInputStream iStream = new FileInputStream(inputFile);
-             ZipOutputStream zipStream = new ZipOutputStream(new FileOutputStream(writeFd.getFileDescriptor()))) {
-
-            zipStream.putNextEntry(new ZipEntry(inputFile.getName()));
-            int amount;
-            while (0 <= (amount = iStream.read(buf))) {
-                zipStream.write(buf, 0, amount);
-                writtenSize += amount;
-            }
-
-            zipStream.closeEntry();
-            zipStream.close();
-            iStream.close();
-            writeFd.close();
-
-            if (BuildConfig.DEBUG)
-                Log.d(TAG, "doZipFile: done. it took ms: " + (System.currentTimeMillis() - start));
-        } catch (IOException e) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                try {
-                    writeFd.closeWithError(e.getMessage());
-                } catch (IOException e1) {
-                    Log.e(TAG, "doZipFile: ", e1);
-                }
-            }
-            if (BuildConfig.DEBUG)
-                Log.d(TAG, "doZipFile: written: " + writtenSize, e);
-        }
     }
 }
