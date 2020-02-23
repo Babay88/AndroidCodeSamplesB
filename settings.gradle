@@ -1,2 +1,2 @@
-include ':ShareZipped', ':sharedzipexample'
+include ':ShareZipped', ':sharedzipexample', ':blockquotespan', ':blockquotespanexample'
 
