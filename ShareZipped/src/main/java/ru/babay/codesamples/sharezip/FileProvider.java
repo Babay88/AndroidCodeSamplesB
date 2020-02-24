@@ -575,7 +575,7 @@ public class FileProvider extends ContentProvider {
      * Return {@link PathStrategy} for given authority, either by parsing or
      * returning from cache.
      */
-    private static PathStrategy getPathStrategy(Context context, String authority) {
+    protected static PathStrategy getPathStrategy(Context context, String authority) {
         PathStrategy strat;
         synchronized (sCache) {
             strat = sCache.get(authority);

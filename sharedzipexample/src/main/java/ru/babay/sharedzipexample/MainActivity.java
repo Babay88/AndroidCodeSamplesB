@@ -14,23 +14,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import ru.babay.codesamples.sharezip.ZipFilesProvider;
 import ru.babay.codesamples.sharezip.ZipableFileProvider;
 
 public class MainActivity extends AppCompatActivity {
 
     private final String FILE_NAME = "example.jpg";
+    private final String FILE2_NAME = "example2.jpg";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        View btn = findViewById(R.id.doShareZip);
-        btn.setOnClickListener(this::doShareZip);
+
+        findViewById(R.id.doShareZip).setOnClickListener(this::doShareZip);
+        findViewById(R.id.doShare2Zip).setOnClickListener(this::doShare2Zip);
+
     }
 
     private void doShareZip(View view) {
-        File file = getFile();
+        File file = getFile(FILE_NAME);
         Uri uri = ZipableFileProvider.getUriForFile(this, getPackageName() + ".provider", file, true);
 
         String name = ZipableFileProvider.getExportFileName(file, true);
@@ -46,9 +50,32 @@ public class MainActivity extends AppCompatActivity {
         startActivity(chooserIntent);
     }
 
-    private File getFile() {
+    private void doShare2Zip(View view) {
+        File f1 = getFile(FILE_NAME);
+        File f2 = getFile(FILE2_NAME);
+        String zipName = "someFiles3.zip";
+
+        String[] names = new String[]{f1.getName(), f2.getName()};
+        Uri uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", f1.getParentFile(), zipName, names);
+
+        // or you can use this
+        //Uri uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", zipName, new File[] {f1, f2});
+
+        Intent sendIntent = new Intent(Intent.ACTION_SEND);
+        sendIntent.setType("application/zip");
+
+        sendIntent.putExtra(Intent.EXTRA_SUBJECT, zipName);
+        sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, "Example share zip on the fly2");
+        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        Intent chooserIntent = Intent.createChooser(sendIntent, "Example share");
+        startActivity(chooserIntent);
+    }
+
+    private File getFile(String name) {
         File dir = getExternalCacheDir();
-        File file = new File(dir, FILE_NAME);
+        File file = new File(dir, name);
         if (!file.exists()) {
             copyFromAssets(file);
         }
