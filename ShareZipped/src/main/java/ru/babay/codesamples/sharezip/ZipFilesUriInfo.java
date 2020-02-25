@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 class ZipFilesUriInfo implements MultiZipsUriInfo {
-    static final String TYPE = "multiFiles";
+    static final String TYPE = "mf";
     private final String zipFileName;
     private final File[] files;
 
@@ -20,8 +20,11 @@ class ZipFilesUriInfo implements MultiZipsUriInfo {
 
 
     public ZipFilesUriInfo(FileProvider.PathStrategy pathStrategy, Uri uri) {
-        File file = pathStrategy.getFileForUri(uri);
-        zipFileName = file.getName();
+        String zipFileName = Uri.decode(uri.getEncodedPath());
+        if (zipFileName.startsWith("/")) {
+            zipFileName = zipFileName.substring(1);
+        }
+        this.zipFileName = zipFileName;
 
         Set<String> keys = uri.getQueryParameterNames();
         List<File> files = new ArrayList<>();
@@ -31,7 +34,7 @@ class ZipFilesUriInfo implements MultiZipsUriInfo {
                 if (n >= 0 && n < keys.size()) {
                     String encoded = uri.getQueryParameter(key);
                     String path = new String(Base64.decode(encoded, 0));
-                    files.add(new File(path));
+                    files.add(pathStrategy.getFileForPath(path));
                 }
             } catch (Exception e) {
             }
@@ -40,19 +43,17 @@ class ZipFilesUriInfo implements MultiZipsUriInfo {
     }
 
     @Override
-    public Uri toUri(FileProvider.PathStrategy pathStrategy) {
-        File parentDir = files[0].getParentFile();
-        Uri uri = pathStrategy.getUriForFile(new File(parentDir, zipFileName));
-
+    public Uri toUri(FileProvider.PathStrategy pathStrategy, String authority) {
         Uri.Builder builder = new Uri.Builder()
-                .scheme(uri.getScheme())
-                .authority(uri.getAuthority())
-                .encodedPath(uri.getPath())
+                .scheme("content")
+                .authority(authority)
+                .path(zipFileName)
                 .appendQueryParameter(KEY_TYPE, TYPE);
 
         for (int i = 0; i < files.length; i++) {
             String key = Integer.toString(i);
-            String path = Base64.encodeToString(files[i].getAbsolutePath().getBytes(), 0);
+            String path = pathStrategy.getPathForFile(files[i]);
+            path = Base64.encodeToString(path.getBytes(), 0);
             builder.appendQueryParameter(key, path);
         }
         return builder.build();

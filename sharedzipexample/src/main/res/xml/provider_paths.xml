@@ -3,4 +3,12 @@
     <external-path
         name="external_files"
         path="." />
+
+    <external-path
+        name="cch"
+        path="./Android/data/ru.babay.sharedzipexample/cache/" />
+
+    <external-path
+        name="dat"
+        path="./Android/data/ru.babay.sharedzipexample/" />
 </paths>

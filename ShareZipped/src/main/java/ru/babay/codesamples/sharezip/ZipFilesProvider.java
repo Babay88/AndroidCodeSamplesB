@@ -43,7 +43,7 @@ public class ZipFilesProvider extends FileProvider {
     public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
                                     File folder, String zipFileName, String[] fileNames) {
         final PathStrategy strategy = getPathStrategy(context, authority);
-        return new FilesInFolderZipUriInfo(folder, zipFileName, fileNames).toUri(strategy);
+        return new FilesInFolderZipUriInfo(folder, zipFileName, fileNames).toUri(strategy, authority);
     }
 
     /**
@@ -59,7 +59,7 @@ public class ZipFilesProvider extends FileProvider {
     public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
                                     String zipFileName, File[] files) {
         final PathStrategy strategy = getPathStrategy(context, authority);
-        return new ZipFilesUriInfo(zipFileName, files).toUri(strategy);
+        return new ZipFilesUriInfo(zipFileName, files).toUri(strategy, authority);
     }
 
     private static ParcelFileDescriptor startZippedPipe(MultiZipsUriInfo zipInfo) throws IOException {

@@ -20,7 +20,7 @@ import ru.babay.codesamples.sharezip.ZipableFileProvider;
 public class MainActivity extends AppCompatActivity {
 
     private final String FILE_NAME = "example.jpg";
-    private final String FILE2_NAME = "example2.jpg";
+    private final String FILE2_NAME = "../example2.jpg";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,11 +55,12 @@ public class MainActivity extends AppCompatActivity {
         File f2 = getFile(FILE2_NAME);
         String zipName = "someFiles3.zip";
 
-        String[] names = new String[]{f1.getName(), f2.getName()};
-        Uri uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", f1.getParentFile(), zipName, names);
+        // you can use this
+        //String[] names = new String[]{f1.getName(), f2.getName()};
+        //Uri uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", f1.getParentFile(), zipName, names);
 
         // or you can use this
-        //Uri uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", zipName, new File[] {f1, f2});
+        Uri uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", zipName, new File[]{f1, f2});
 
         Intent sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.setType("application/zip");

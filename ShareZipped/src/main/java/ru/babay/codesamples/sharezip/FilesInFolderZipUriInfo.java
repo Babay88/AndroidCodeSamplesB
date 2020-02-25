@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 class FilesInFolderZipUriInfo implements MultiZipsUriInfo {
-    static final String TYPE = "oneDir";
+    static final String TYPE = "od";
     private final File folder;
     private final String zipFileName;
     private final String[] fileNames;
@@ -36,21 +36,17 @@ class FilesInFolderZipUriInfo implements MultiZipsUriInfo {
                     fileNames.add(name);
                 }
             } catch (Exception e) {
-
             }
         }
         this.fileNames = fileNames.toArray(new String[0]);
     }
 
     @Override
-    public Uri toUri(FileProvider.PathStrategy pathStrategy) {
-        Uri uri = pathStrategy.getUriForFile(new File(folder, zipFileName));
-
-
+    public Uri toUri(FileProvider.PathStrategy pathStrategy, String authority) {
         Uri.Builder builder = new Uri.Builder()
-                .scheme(uri.getScheme())
-                .authority(uri.getAuthority())
-                .encodedPath(uri.getPath())
+                .scheme("content")
+                .authority(authority)
+                .encodedPath(pathStrategy.getPathForFile(new File(folder, zipFileName)))
                 .appendQueryParameter(KEY_TYPE, TYPE);
 
         for (int i = 0; i < fileNames.length; i++) {

@@ -681,6 +681,10 @@ public class FileProvider extends ContentProvider {
          * Return a {@link File} that represents the given {@link Uri}.
          */
         File getFileForUri(Uri uri);
+
+        String getPathForFile(File file);
+
+        File getFileForPath(String path);
     }
 
     /**
@@ -723,6 +727,19 @@ public class FileProvider extends ContentProvider {
 
         @Override
         public Uri getUriForFile(File file) {
+            String path = getPathForFile(file);
+            return new Uri.Builder().scheme("content")
+                    .authority(mAuthority).encodedPath(path).build();
+        }
+
+        @Override
+        public File getFileForUri(Uri uri) {
+            String path = uri.getEncodedPath();
+            return getFileForPath(path);
+        }
+
+        @Override
+        public String getPathForFile(File file) {
             String path;
             try {
                 path = file.getCanonicalPath();
@@ -754,22 +771,19 @@ public class FileProvider extends ContentProvider {
             }
 
             // Encode the tag and path separately
-            path = Uri.encode(mostSpecific.getKey()) + '/' + Uri.encode(path, "/");
-            return new Uri.Builder().scheme("content")
-                    .authority(mAuthority).encodedPath(path).build();
+            return Uri.encode(mostSpecific.getKey()) + '/' + Uri.encode(path, "/");
         }
 
         @Override
-        public File getFileForUri(Uri uri) {
-            String path = uri.getEncodedPath();
-
-            final int splitIndex = path.indexOf('/', 1);
-            final String tag = Uri.decode(path.substring(1, splitIndex));
-            path = Uri.decode(path.substring(splitIndex + 1));
+        public File getFileForPath(final String sourcePath) {
+            final int splitIndex = sourcePath.indexOf('/', 1);
+            int start = sourcePath.charAt(0) == '/' ? 1 : 0;
+            final String tag = Uri.decode(sourcePath.substring(start, splitIndex));
+            String path = Uri.decode(sourcePath.substring(splitIndex + 1));
 
             final File root = mRoots.get(tag);
             if (root == null) {
-                throw new IllegalArgumentException("Unable to find configured root for " + uri);
+                throw new IllegalArgumentException("Unable to find configured root path " + sourcePath);
             }
 
             File file = new File(root, path);
