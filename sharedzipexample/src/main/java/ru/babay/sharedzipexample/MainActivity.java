@@ -20,7 +20,10 @@ import ru.babay.codesamples.sharezip.ZipableFileProvider;
 public class MainActivity extends AppCompatActivity {
 
     private final String FILE_NAME = "example.jpg";
-    private final String FILE2_NAME = "../example2.jpg";
+    private final String FILE2_NAME = "../files/example2.jpg";
+    private final String FILE3_NAME = "example2.jpg";
+
+    private int method = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,14 +56,27 @@ public class MainActivity extends AppCompatActivity {
     private void doShare2Zip(View view) {
         File f1 = getFile(FILE_NAME);
         File f2 = getFile(FILE2_NAME);
+        File f3 = getFile(FILE3_NAME);
         String zipName = "someFiles3.zip";
 
-        // you can use this
-        //String[] names = new String[]{f1.getName(), f2.getName()};
-        //Uri uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", f1.getParentFile(), zipName, names);
+        Uri uri;
+        switch (method) {
+            case 0:
+                String[] names = new String[]{f1.getName(), f3.getName()};
+                uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", f1.getParentFile(), zipName, names);
+                break;
 
-        // or you can use this
-        Uri uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", zipName, new File[]{f1, f2});
+            case 1:
+                uri = ZipFilesProvider.getUriForFile(this, getPackageName() + ".provider2", zipName, new File[]{f1, f2});
+                break;
+
+            case 2:
+                uri = ZipFilesProvider.getUriForFile2(this, getPackageName() + ".provider2", zipName, new File[]{f1, f2});
+                break;
+
+            default:
+                throw new RuntimeException("Not implemented for method: " + method);
+        }
 
         Intent sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.setType("application/zip");
@@ -78,6 +94,10 @@ public class MainActivity extends AppCompatActivity {
         File dir = getExternalCacheDir();
         File file = new File(dir, name);
         if (!file.exists()) {
+            File parent = file.getParentFile();
+            if (!parent.exists()) {
+                parent.mkdirs();
+            }
             copyFromAssets(file);
         }
         return file;

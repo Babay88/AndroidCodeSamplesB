@@ -62,6 +62,12 @@ public class ZipFilesProvider extends FileProvider {
         return new ZipFilesUriInfo(zipFileName, files).toUri(strategy, authority);
     }
 
+    public static Uri getUriForFile2(@NonNull Context context, @NonNull String authority,
+                                     String zipFileName, File[] files) {
+        final PathStrategy strategy = getPathStrategy(context, authority);
+        return new ZipFilesUriInfo2(zipFileName, files).toUri(strategy, authority);
+    }
+
     private static ParcelFileDescriptor startZippedPipe(MultiZipsUriInfo zipInfo) throws IOException {
         ParcelFileDescriptor[] pipes = Build.VERSION.SDK_INT >= 19 ?
                 ParcelFileDescriptor.createReliablePipe() :
@@ -131,7 +137,9 @@ public class ZipFilesProvider extends FileProvider {
             return new ZipFilesUriInfo(mStrategy, uri);
         } else if (FilesInFolderZipUriInfo.TYPE.equals(type)) {
             return new FilesInFolderZipUriInfo(mStrategy, uri);
-        } else
-            return null;
+        } else if (ZipFilesUriInfo2.TYPE.equals(type)) {
+            return new ZipFilesUriInfo2(mStrategy, uri);
+        }
+        return null;
     }
 }
