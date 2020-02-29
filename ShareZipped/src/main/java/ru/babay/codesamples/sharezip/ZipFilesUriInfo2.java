@@ -25,11 +25,11 @@ class ZipFilesUriInfo2 implements MultiZipsUriInfo {
             return;
         }
 
-        zipFileName = pathSegments.get(0);
+        zipFileName = pathSegments.get(pathSegments.size() - 1);
 
         files = new File[pathSegments.size() / 2];
 
-        for (int i = 2; i < pathSegments.size(); i += 2) {
+        for (int i = 1; i < pathSegments.size(); i += 2) {
             String rootName = pathSegments.get(i - 1);
             String path = pathSegments.get(i);
             files[(i - 1) / 2] = pathStrategy.getFile(rootName, path);
@@ -41,7 +41,6 @@ class ZipFilesUriInfo2 implements MultiZipsUriInfo {
         Uri.Builder builder = new Uri.Builder()
                 .scheme("content")
                 .authority(authority)
-                .appendPath(zipFileName)
                 .appendQueryParameter(KEY_TYPE, TYPE);
 
         for (int i = 0; i < files.length; i++) {
@@ -50,6 +49,8 @@ class ZipFilesUriInfo2 implements MultiZipsUriInfo {
             builder.appendPath(root.getKey());
             builder.appendPath(path);
         }
+
+        builder.appendPath(zipFileName);
         return builder.build();
     }
 
