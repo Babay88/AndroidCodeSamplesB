@@ -97,6 +97,11 @@ public class ZipFilesProvider extends FileProvider {
     }
 
     @Override
+    public String getType(@NonNull Uri uri) {
+        return "application/zip";
+    }
+
+    @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
                         @Nullable String[] selectionArgs,
                         @Nullable String sortOrder) {

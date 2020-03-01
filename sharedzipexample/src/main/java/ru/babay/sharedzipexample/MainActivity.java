@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final String FILE_NAME = "example.jpg";
     private final String FILE2_NAME = "../files/example2.jpg";
-    private final String FILE3_NAME = "example2.jpg";
+    private final String FILE3_NAME = "example3.jpg";
 
     private int method = 2;
 

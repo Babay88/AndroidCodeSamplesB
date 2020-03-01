@@ -32,8 +32,8 @@ class ZipFilesUriInfo implements MultiZipsUriInfo {
             try {
                 int n = Integer.parseInt(key);
                 if (n >= 0 && n < keys.size()) {
-                    String encoded = uri.getQueryParameter(key);
-                    String path = new String(Base64.decode(encoded, 0));
+                    String path = uri.getQueryParameter(key);
+                    path = new String(Base64.decode(path, 0));
                     files.add(pathStrategy.getFileForPath(path));
                 }
             } catch (Exception e) {
