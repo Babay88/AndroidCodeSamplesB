@@ -33,7 +33,7 @@ class ZipFilesUriInfo implements MultiZipsUriInfo {
                 int n = Integer.parseInt(key);
                 if (n >= 0 && n < keys.size()) {
                     String path = uri.getQueryParameter(key);
-                    path = new String(Base64.decode(path, 0));
+//                    path = new String(Base64.decode(path, 0));
                     files.add(pathStrategy.getFileForPath(path));
                 }
             } catch (Exception e) {
@@ -53,7 +53,7 @@ class ZipFilesUriInfo implements MultiZipsUriInfo {
         for (int i = 0; i < files.length; i++) {
             String key = Integer.toString(i);
             String path = pathStrategy.getPathForFile(files[i]);
-            path = Base64.encodeToString(path.getBytes(), 0);
+//            path = Base64.encodeToString(path.getBytes(), 0);
             builder.appendQueryParameter(key, path);
         }
         return builder.build();
